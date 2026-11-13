@@ -1,5 +1,5 @@
 {
-  "name": "expo-drizzle",
+  "name": "expense-tracker",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
