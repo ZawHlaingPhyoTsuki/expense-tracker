@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "babel-plugin-inline-import": "^3.0.0",
     "drizzle-kit": "^1.0.0-rc.5",
     "typescript": "~6.0.3"
   },
@@ -40,7 +41,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "db:generate": "bunx drizzle-kit generate"
   },
   "private": true
 }
