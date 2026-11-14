@@ -33,6 +33,8 @@
     "@types/react": "~19.3.0",
     "babel-plugin-inline-import": "^3.0.0",
     "drizzle-kit": "^1.0.0-rc.5",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
