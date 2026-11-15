@@ -1,11 +1,10 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import migrationsJs from "../../drizzle/migrations"; // Import generated migrations
+import migrationsJs from "../../drizzle/migrations";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import AppTabs from "@/components/app-tabs";
 import { db } from "@/db/client";
 
 const migrations = migrationsJs as unknown as Parameters<
@@ -14,34 +13,31 @@ const migrations = migrationsJs as unknown as Parameters<
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
-
-  // Run migrations automatically when the layout mounts
   const { success, error } = useMigrations(db, migrations);
 
-if (error) {
-  console.error("Migration error:", error);
-  console.error("Underlying cause:", error.cause);
-
-  if (error.cause instanceof Error) {
-    console.error("SQLite message:", error.cause.message);
-    console.error("SQLite stack:", error.cause.stack);
-  }
-
-  return null;
-}
-
-  if (!success) {
-    // Optionally show a loading screen while migrating
+  if (error) {
+    console.error("Migration error:", error, error.cause);
     return null;
   }
+  if (!success) return null;
 
-  // Only render the app after migrations are successful
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <AppTabs />
+      <Stack screenOptions={{ headerShown: true }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="test"
+          options={{
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.7, 0.9], // Opens at 50% height, expandable to 90%
+            sheetGrabberVisible: true, // Shows the top drag handle
+            headerShown: true,
+          }}
+        />
+      </Stack>
     </ThemeProvider>
   );
 }
