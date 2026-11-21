@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
+import { Radius, Spacing } from "@/constants/theme";
 import { ThemedInput } from "@/components/themed-input";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -37,13 +38,22 @@ function Chip({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={[
+      style={({ pressed }) => [
         styles.chip,
-        { borderColor: active ? theme.accent : theme.border },
-        active && { backgroundColor: theme.accentSoft },
+        {
+          borderColor: active ? theme.accent : theme.border,
+          backgroundColor: active ? theme.accentSoft : theme.backgroundElement,
+          opacity: pressed ? 0.75 : 1,
+        },
       ]}
     >
-      <ThemedText style={[styles.chipText, active && { fontWeight: 700 }]}>
+      <ThemedText
+        style={[
+          styles.chipText,
+          { color: active ? theme.accent : theme.text },
+          active && styles.chipTextActive,
+        ]}
+      >
         {label}
       </ThemedText>
     </Pressable>
@@ -53,7 +63,7 @@ function Chip({
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: () => void | Promise<void>;
 };
 
 export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
@@ -64,9 +74,10 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
   const [category, setCategory] = useState<string>(CATEGORIES[0].key);
   const [note, setNote] = useState("");
   const [date, setDate] = useState(() => startOfDay(new Date()));
+  const [saving, setSaving] = useState(false);
   const [wasVisible, setWasVisible] = useState(false);
 
-  // start fresh every time the sheet opens (adjust state during render)
+  // start fresh every time the sheet opens
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) {
@@ -74,6 +85,7 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       setCategory(CATEGORIES[0].key);
       setNote("");
       setDate(startOfDay(new Date()));
+      setSaving(false);
     }
   }
 
@@ -98,6 +110,7 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
   }
 
   async function save() {
+    if (saving) return;
     const minor = parseAmount(amount);
     if (minor === null) {
       Alert.alert(
@@ -106,7 +119,7 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       );
       return;
     }
-    // selected day + current time of day, so ordering inside a day stays sensible
+
     const now = new Date();
     const spentAt = new Date(
       date.getFullYear(),
@@ -117,11 +130,18 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       now.getSeconds(),
     ).getTime();
 
-    await db
-      .insert(expensesTable)
-      .values({ amount: minor, category, note: note.trim(), spentAt });
-    onSaved();
-    onClose();
+    setSaving(true);
+    try {
+      await db
+        .insert(expensesTable)
+        .values({ amount: minor, category, note: note.trim(), spentAt });
+      await onSaved();
+      onClose();
+    } catch {
+      Alert.alert("Could not save expense", "Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -137,13 +157,15 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
           style={[
             styles.header,
             {
-              paddingTop: insets.top + 8,
+              paddingTop: insets.top + Spacing.sm,
               backgroundColor: theme.background,
               borderBottomColor: theme.border,
             },
           ]}
         >
-          <ThemedText style={styles.headerTitle}>New expense</ThemedText>
+          <ThemedText type="subtitle" style={styles.headerTitle}>
+            New expense
+          </ThemedText>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -164,120 +186,147 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.content}
           >
-            <ThemedText themeColor="textSecondary" style={styles.label}>
-              Amount ({CURRENCY})
-            </ThemedText>
-            <View style={styles.amountRow}>
-              <View style={{ flex: 1 }}>
-                <ThemedInput
-                  value={amount}
-                  onChangeText={setAmount}
-                  placeholder="0.00"
-                  keyboardType="decimal-pad"
-                  autoFocus
-                  style={styles.amountInput}
+            <View
+              style={[
+                styles.amountCard,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <ThemedText type="label" themeColor="textSecondary">
+                Amount ({CURRENCY})
+              </ThemedText>
+              <View style={styles.amountRow}>
+                <View style={{ flex: 1 }}>
+                  <ThemedInput
+                    value={amount}
+                    onChangeText={setAmount}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                    autoFocus
+                    style={styles.amountInput}
+                  />
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Add another amount"
+                  onPress={() =>
+                    setAmount((a) => (a && !a.endsWith("+") ? a + "+" : a))
+                  }
+                  style={({ pressed }) => [
+                    styles.plus,
+                    {
+                      backgroundColor: theme.accentSoft,
+                      borderColor: theme.accent,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
+                >
+                  <ThemedText style={[styles.plusText, { color: theme.accent }]}>
+                    +
+                  </ThemedText>
+                </Pressable>
+              </View>
+              {amount.includes("+") && (
+                <ThemedText
+                  style={[
+                    styles.preview,
+                    { color: previewInvalid ? theme.danger : theme.accent },
+                  ]}
+                >
+                  {previewInvalid
+                    ? "Check the numbers"
+                    : `= ${formatMoney(parsed ?? 0)}`}
+                </ThemedText>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <ThemedText type="label" themeColor="textSecondary">
+                Category
+              </ThemedText>
+              <View style={styles.chips}>
+                {CATEGORIES.map((c) => (
+                  <Chip
+                    key={c.key}
+                    label={`${c.emoji} ${c.key}`}
+                    active={c.key === category}
+                    onPress={() => setCategory(c.key)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <ThemedText type="label" themeColor="textSecondary">
+                Date
+              </ThemedText>
+              <View style={styles.chips}>
+                <Chip
+                  label="Today"
+                  active={isToday}
+                  onPress={() => setDate(today)}
+                />
+                <Chip
+                  label="Yesterday"
+                  active={isYesterday}
+                  onPress={() => setDate(yesterday)}
+                />
+                <Chip
+                  label={
+                    isCustom ? `📅 ${formatShortDate(date)}` : "📅 Pick date"
+                  }
+                  active={isCustom}
+                  onPress={pickDate}
                 />
               </View>
-              {/* decimal-pad has no "+" key on Android */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add another amount"
-                onPress={() =>
-                  setAmount((a) => (a && !a.endsWith("+") ? a + "+" : a))
-                }
-                style={[
-                  styles.plus,
-                  {
-                    backgroundColor: theme.accentSoft,
-                    borderColor: theme.accent,
-                  },
-                ]}
-              >
-                <ThemedText style={styles.plusText}>+</ThemedText>
-              </Pressable>
             </View>
-            {amount.includes("+") && (
-              <ThemedText
-                style={[
-                  styles.preview,
-                  { color: previewInvalid ? theme.danger : theme.accent },
-                ]}
-              >
-                {previewInvalid
-                  ? "Check the numbers"
-                  : `= ${formatMoney(parsed ?? 0)}`}
+
+            <View style={styles.section}>
+              <ThemedText type="label" themeColor="textSecondary">
+                Note (optional)
               </ThemedText>
-            )}
-
-            <ThemedText themeColor="textSecondary" style={styles.label}>
-              Category
-            </ThemedText>
-            <View style={styles.chips}>
-              {CATEGORIES.map((c) => (
-                <Chip
-                  key={c.key}
-                  label={`${c.emoji} ${c.key}`}
-                  active={c.key === category}
-                  onPress={() => setCategory(c.key)}
-                />
-              ))}
-            </View>
-
-            <ThemedText themeColor="textSecondary" style={styles.label}>
-              Date
-            </ThemedText>
-            <View style={styles.chips}>
-              <Chip
-                label="Today"
-                active={isToday}
-                onPress={() => setDate(today)}
-              />
-              <Chip
-                label="Yesterday"
-                active={isYesterday}
-                onPress={() => setDate(yesterday)}
-              />
-              <Chip
-                label={isCustom ? `📅 ${formatShortDate(date)}` : "📅 Pick date"}
-                active={isCustom}
-                onPress={pickDate}
+              <ThemedInput
+                value={note}
+                onChangeText={setNote}
+                placeholder="Lunch, coffee, taxi…"
+                returnKeyType="done"
+                onSubmitEditing={() => void save()}
               />
             </View>
-
-            <ThemedText themeColor="textSecondary" style={styles.label}>
-              Note (optional)
-            </ThemedText>
-            <ThemedInput
-              value={note}
-              onChangeText={setNote}
-              placeholder="Lunch, coffee, taxi…"
-              returnKeyType="done"
-              onSubmitEditing={save}
-            />
           </ScrollView>
 
           <View
             style={[
               styles.footer,
               {
-                paddingBottom: insets.bottom + 12,
+                paddingBottom: insets.bottom + Spacing.md,
                 backgroundColor: theme.background,
                 borderTopColor: theme.border,
               },
             ]}
           >
             <Pressable
-              onPress={save}
+              onPress={() => void save()}
+              disabled={saving}
               accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
               style={({ pressed }) => [
                 styles.save,
-                { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
+                {
+                  backgroundColor: theme.accent,
+                  opacity: saving ? 0.55 : pressed ? 0.85 : 1,
+                },
               ]}
             >
               <ThemedText style={[styles.saveText, { color: theme.onAccent }]}>
-                {parsed !== null
-                  ? `Save ${formatMoney(parsed)}`
-                  : "Save expense"}
+                {saving
+                  ? "Saving…"
+                  : parsed !== null
+                    ? `Save ${formatMoney(parsed)}`
+                    : "Save expense"}
               </ThemedText>
             </Pressable>
           </View>
@@ -293,39 +342,56 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerTitle: { fontSize: 18, fontWeight: 700 },
-  headerAction: { fontSize: 16, fontWeight: 600 },
-  content: { padding: 20, paddingBottom: 24 },
-  label: { fontSize: 13, marginTop: 20, marginBottom: 6 },
-  amountRow: { flexDirection: "row", gap: 10, alignItems: "center" },
-  amountInput: { fontSize: 28, fontWeight: 700 },
-  preview: { marginTop: 6, fontSize: 14 },
+  headerTitle: { fontSize: 24, lineHeight: 30 },
+  headerAction: { fontSize: 16, fontWeight: "600" },
+  content: { padding: Spacing.xl, paddingBottom: Spacing.xl, gap: Spacing.xl },
+  amountCard: {
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    gap: Spacing.sm,
+  },
+  amountRow: { flexDirection: "row", gap: Spacing.sm, alignItems: "center" },
+  amountInput: {
+    fontSize: 32,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    minHeight: 60,
+  },
+  preview: { fontSize: 14, fontWeight: "600" },
   plus: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: Radius.md,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  plusText: { fontSize: 26, lineHeight: 30, fontWeight: 700 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  plusText: { fontSize: 28, lineHeight: 32, fontWeight: "600" },
+  section: { gap: Spacing.sm },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
     borderWidth: 1,
   },
-  chipText: { fontSize: 14, lineHeight: 20 },
+  chipText: { fontSize: 14, lineHeight: 20, fontWeight: "500" },
+  chipTextActive: { fontWeight: "700" },
   footer: {
-    paddingTop: 12,
-    paddingHorizontal: 20,
+    paddingTop: Spacing.md,
+    paddingHorizontal: Spacing.xl,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  save: { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  saveText: { fontSize: 16, fontWeight: 700 },
+  save: {
+    minHeight: 54,
+    borderRadius: Radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveText: { fontSize: 16, fontWeight: "700" },
 });

@@ -1,4 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
+
+import { Radius } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { ThemedText } from "@/components/themed-text";
 import { monthLabel } from "@/lib/dates";
 
@@ -9,29 +12,44 @@ type Props = {
 };
 
 export function MonthSwitcher({ month, onShift, disableNext }: Props) {
+  const theme = useTheme();
+  const arrowStyle = {
+    backgroundColor: theme.backgroundElement,
+    borderColor: theme.border,
+  };
+
   return (
     <View style={styles.row}>
       <Pressable
         onPress={() => onShift(-1)}
-        hitSlop={12}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Previous month"
-        style={styles.button}
+        style={({ pressed }) => [
+          styles.button,
+          arrowStyle,
+          pressed && { opacity: 0.7 },
+        ]}
       >
         <ThemedText style={styles.arrow}>‹</ThemedText>
       </Pressable>
-      <ThemedText style={styles.label}>{monthLabel(month)}</ThemedText>
+      <ThemedText type="default" style={styles.label}>
+        {monthLabel(month)}
+      </ThemedText>
       <Pressable
         onPress={() => onShift(1)}
-        hitSlop={12}
+        hitSlop={8}
         disabled={disableNext}
         accessibilityRole="button"
         accessibilityLabel="Next month"
-        style={styles.button}
+        style={({ pressed }) => [
+          styles.button,
+          arrowStyle,
+          disableNext && { opacity: 0.35 },
+          pressed && !disableNext && { opacity: 0.7 },
+        ]}
       >
-        <ThemedText style={[styles.arrow, disableNext && { opacity: 0.25 }]}>
-          ›
-        </ThemedText>
+        <ThemedText style={styles.arrow}>›</ThemedText>
       </Pressable>
     </View>
   );
@@ -44,12 +62,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   button: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  arrow: { fontSize: 30, lineHeight: 34 },
-  label: { fontSize: 16, fontWeight: 600 },
+  arrow: { fontSize: 28, lineHeight: 32, marginTop: -2 },
+  label: { fontSize: 16, fontWeight: "600", letterSpacing: -0.2 },
 });

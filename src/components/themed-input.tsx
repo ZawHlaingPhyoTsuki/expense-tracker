@@ -1,23 +1,24 @@
 import { StyleSheet, TextInput, type TextInputProps } from "react-native";
+
+import { Radius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import { Spacing } from "@/constants/theme";
 
 export function ThemedInput(props: TextInputProps) {
   const theme = useTheme();
 
   return (
     <TextInput
+      placeholderTextColor={theme.textSecondary}
       {...props}
       style={[
         styles.input,
         {
-          backgroundColor: theme.backgroundElement,
+          backgroundColor: theme.backgroundSubtle,
           color: theme.text,
-          borderColor: theme.textSecondary + "40", // 25% opacity border
+          borderColor: theme.border,
         },
         props.style,
       ]}
-      placeholderTextColor={theme.textSecondary}
     />
   );
 }
@@ -25,11 +26,11 @@ export function ThemedInput(props: TextInputProps) {
 const styles = StyleSheet.create({
   input: {
     width: "100%",
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    borderRadius: Spacing.three,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
     borderWidth: 1,
     fontSize: 16,
-    minHeight: 52, // Minimum touch target height
+    minHeight: 52,
   },
 });

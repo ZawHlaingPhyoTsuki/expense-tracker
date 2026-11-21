@@ -9,6 +9,7 @@ import { ExpenseRow } from "@/components/expense-row";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Radius, Spacing } from "@/constants/theme";
 import { db } from "@/db/client";
 import { expensesTable, type Expense } from "@/db/schema";
 import { useMonthExpenses } from "@/hooks/use-month-expenses";
@@ -58,9 +59,7 @@ export default function DailyScreen() {
   }, [rows]);
 
   // current month: divide by days passed so far; past months: by all days
-  const daysCounted = isCurrentMonth
-    ? new Date().getDate()
-    : daysInMonth(month);
+  const daysCounted = isCurrentMonth ? new Date().getDate() : daysInMonth(month);
   const avgPerDay = Math.round(total / Math.max(1, daysCounted));
 
   function confirmDelete(item: Expense) {
@@ -73,8 +72,14 @@ export default function DailyScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            await db.delete(expensesTable).where(eq(expensesTable.id, item.id));
-            reload();
+            try {
+              await db
+                .delete(expensesTable)
+                .where(eq(expensesTable.id, item.id));
+              await reload();
+            } catch {
+              Alert.alert("Could not delete expense", "Please try again.");
+            }
           },
         },
       ],
@@ -82,17 +87,47 @@ export default function DailyScreen() {
   }
 
   const header = (
-    <View>
+    <View style={styles.header}>
       <MonthSwitcher
         month={month}
         onShift={(d) => setMonth(addMonths(month, d))}
         disableNext={isCurrentMonth}
       />
-      <ThemedText style={styles.total}>{formatMoney(total)}</ThemedText>
-      <ThemedText themeColor="textSecondary" style={styles.caption}>
-        {rows.length} {rows.length === 1 ? "expense" : "expenses"} · avg{" "}
-        {formatMoney(avgPerDay)}/day
-      </ThemedText>
+
+      <View
+        style={[
+          styles.summaryCard,
+          {
+            backgroundColor: theme.backgroundElement,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        <ThemedText type="label" themeColor="textSecondary">
+          Spent this month
+        </ThemedText>
+        <ThemedText style={styles.total}>{formatMoney(total)}</ThemedText>
+        <View style={styles.stats}>
+          <View style={styles.stat}>
+            <ThemedText style={styles.statValue}>{rows.length}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.statLabel}>
+              {rows.length === 1 ? "expense" : "expenses"}
+            </ThemedText>
+          </View>
+          <View
+            style={[styles.statDivider, { backgroundColor: theme.border }]}
+          />
+          <View style={styles.stat}>
+            <ThemedText style={styles.statValue}>
+              {formatMoney(avgPerDay)}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.statLabel}>
+              avg / day
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+
       <CategoryBreakdown breakdown={breakdown} total={total} />
     </View>
   );
@@ -104,10 +139,18 @@ export default function DailyScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <ThemedText style={styles.emptyEmoji}>🧾</ThemedText>
+          <View
+            style={[
+              styles.empty,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <ThemedText style={styles.emptyTitle}>No expenses yet</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-              Nothing here yet.{"\n"}Tap + to log an expense.
+              Tap + to log your first expense for this month.
             </ThemedText>
           </View>
         }
@@ -120,21 +163,21 @@ export default function DailyScreen() {
         }
         renderSectionHeader={({ section }) => (
           <ThemedView style={styles.sectionHeader}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              {section.title}
-            </ThemedText>
-            <ThemedText type="smallBold" themeColor="textSecondary">
+            <ThemedText type="smallBold">{section.title}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.sectionTotal}>
               {formatMoney(section.total)}
             </ThemedText>
           </ThemedView>
         )}
         renderItem={({ item }) => (
-          <ExpenseRow item={item} onLongPress={confirmDelete} />
+          <View style={styles.rowWrap}>
+            <ExpenseRow item={item} onLongPress={confirmDelete} />
+          </View>
         )}
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingHorizontal: 20,
-          paddingBottom: 120,
+          paddingTop: insets.top + Spacing.lg,
+          paddingHorizontal: Spacing.xl,
+          paddingBottom: insets.bottom + 96,
         }}
       />
 
@@ -144,7 +187,11 @@ export default function DailyScreen() {
         onPress={() => setAdding(true)}
         style={({ pressed }) => [
           styles.fab,
-          { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
+          {
+            backgroundColor: theme.accent,
+            bottom: insets.bottom + Spacing.lg,
+            opacity: pressed ? 0.85 : 1,
+          },
         ]}
       >
         <ThemedText style={[styles.fabText, { color: theme.onAccent }]}>
@@ -163,28 +210,64 @@ export default function DailyScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  total: {
-    fontSize: 48,
-    lineHeight: 56,
-    fontWeight: 700,
-    letterSpacing: -1.5,
-    marginTop: 16,
+  header: { marginBottom: Spacing.sm },
+  summaryCard: {
+    marginTop: Spacing.lg,
+    padding: Spacing.xl,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    gap: Spacing.sm,
   },
-  caption: { fontSize: 14, marginTop: 2 },
+  total: {
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: "700",
+    letterSpacing: -1.5,
+    fontVariant: ["tabular-nums"],
+  },
+  stats: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.lg,
+    marginTop: Spacing.xs,
+  },
+  stat: { gap: 2 },
+  statValue: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  statLabel: { fontSize: 13, lineHeight: 18 },
+  statDivider: { width: 1, height: 30 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 24,
-    paddingBottom: 6,
+    alignItems: "center",
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.sm,
   },
-  empty: { alignItems: "center", marginTop: 56, gap: 12 },
-  emptyEmoji: { fontSize: 40, lineHeight: 48 },
-  emptyText: { textAlign: "center", fontSize: 15, lineHeight: 22 },
-  hint: { textAlign: "center", fontSize: 12, marginTop: 24 },
+  sectionTotal: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+  },
+  rowWrap: { marginBottom: Spacing.sm },
+  empty: {
+    marginTop: Spacing.xl,
+    padding: Spacing.xl,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  emptyTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700" },
+  emptyText: { textAlign: "center", fontSize: 14, lineHeight: 20 },
+  hint: { textAlign: "center", fontSize: 12, marginTop: Spacing.lg },
   fab: {
     position: "absolute",
-    right: 20,
-    bottom: 24,
+    right: Spacing.xl,
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -192,9 +275,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     elevation: 6,
     shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
   },
-  fabText: { fontSize: 32, lineHeight: 36, fontWeight: 500 },
+  fabText: { fontSize: 32, lineHeight: 36, fontWeight: "500", marginTop: -2 },
 });

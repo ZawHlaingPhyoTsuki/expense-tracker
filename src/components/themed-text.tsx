@@ -4,7 +4,7 @@ import { ThemeColor } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 export type ThemedTextProps = TextProps & {
-  type?: "default" | "title" | "small" | "smallBold" | "subtitle";
+  type?: "default" | "title" | "subtitle" | "label" | "caption" | "smallBold";
   themeColor?: ThemeColor;
 };
 
@@ -25,29 +25,37 @@ export function ThemedText({
 }
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
+  default: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "500",
+  },
+  title: {
+    fontSize: 40,
+    lineHeight: 44,
+    fontWeight: "700",
+    letterSpacing: -1,
+  },
+  subtitle: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  label: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  caption: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "500",
   },
   smallBold: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    fontWeight: "700",
   },
 });

@@ -1,4 +1,6 @@
 import { Pressable, StyleSheet, View } from "react-native";
+
+import { Radius, Spacing } from "@/constants/theme";
 import { ThemedText } from "@/components/themed-text";
 import { useTheme } from "@/hooks/use-theme";
 import type { Expense } from "@/db/schema";
@@ -17,14 +19,22 @@ export function ExpenseRow({ item, onLongPress }: Props) {
       style={({ pressed }) => [
         styles.row,
         {
-          borderBottomColor: theme.border,
-          backgroundColor: pressed ? theme.backgroundElement : "transparent",
+          borderColor: theme.border,
+          backgroundColor: pressed
+            ? theme.backgroundSubtle
+            : theme.backgroundElement,
         },
       ]}
     >
-      <ThemedText style={styles.emoji}>{emojiFor(item.category)}</ThemedText>
-      <View style={{ flex: 1 }}>
-        <ThemedText numberOfLines={1}>{item.note || item.category}</ThemedText>
+      <View
+        style={[styles.icon, { backgroundColor: theme.backgroundSubtle }]}
+      >
+        <ThemedText style={styles.emoji}>{emojiFor(item.category)}</ThemedText>
+      </View>
+      <View style={styles.body}>
+        <ThemedText numberOfLines={1} style={styles.title}>
+          {item.note || item.category}
+        </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.meta}>
           {item.category} · {formatTime(item.spentAt)}
         </ThemedText>
@@ -38,13 +48,26 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    marginHorizontal: -4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderWidth: 1,
+    borderRadius: Radius.md,
   },
-  emoji: { fontSize: 24, lineHeight: 30 },
+  icon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emoji: { fontSize: 20, lineHeight: 24 },
+  body: { flex: 1, gap: 2 },
+  title: { fontWeight: "600" },
   meta: { fontSize: 13, lineHeight: 18 },
-  amount: { fontWeight: 700, fontVariant: ["tabular-nums"] },
+  amount: {
+    fontSize: 16,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
 });
