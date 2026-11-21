@@ -7,6 +7,20 @@
       "skillPath": "skills/antislop/SKILL.md",
       "computedHash": "5db1f692cb9722e0f642e9a378d8c44b011a102726efb41bf0003c8c37f0a137"
     },
+    "expo-design-system": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-design-system/SKILL.md",
+      "computedHash": "817613a0a2f7beab0d919b45c8c1aaa9e3d3a50c054eec959c6484248cfcbec9"
+    },
+    "expo-native-ui": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-native-ui/SKILL.md",
+      "computedHash": "7062d8239c825963bc4487678165c843594b9950276b18f1c5d48179414518eb"
+    },
     "expo-project-structure": {
       "source": "expo/skills",
       "sourceType": "github",
@@ -18,6 +32,13 @@
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-router/SKILL.md",
       "computedHash": "9c3a05a145ceec25ccca5c733b9403b03c7174c60c48c017009c2c5a1a68c8cb"
+    },
+    "expo-ui": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-ui/SKILL.md",
+      "computedHash": "7cc34e3ee3d44ee6f754f4cc57bf64d18225ec8d8993d9540a33b9779c540de4"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
@@ -36,6 +57,13 @@
       "sourceType": "github",
       "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
       "computedHash": "9e6c6be41418af17f4bb3f01be31341ee79a0b6abdbb53a2f345021ec0fc46be"
+    },
+    "vercel-react-native-skills": {
+      "source": "vercel-labs/agent-skills",
+      "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "sourceType": "github",
+      "skillPath": "skills/react-native-skills/SKILL.md",
+      "computedHash": "4c160f1f4e623b989cadb71f42a0813be574d172acf5e32a6411c87f3e28c05a"
     }
   }
 }
