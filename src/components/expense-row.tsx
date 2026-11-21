@@ -13,7 +13,14 @@ export function ExpenseRow({ item, onLongPress }: Props) {
   return (
     <Pressable
       onLongPress={() => onLongPress(item)}
-      style={[styles.row, { borderBottomColor: theme.border }]}
+      accessibilityHint="Hold to delete"
+      style={({ pressed }) => [
+        styles.row,
+        {
+          borderBottomColor: theme.border,
+          backgroundColor: pressed ? theme.backgroundElement : "transparent",
+        },
+      ]}
     >
       <ThemedText style={styles.emoji}>{emojiFor(item.category)}</ThemedText>
       <View style={{ flex: 1 }}>
@@ -33,9 +40,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginHorizontal: -4,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   emoji: { fontSize: 24, lineHeight: 30 },
   meta: { fontSize: 13, lineHeight: 18 },
-  amount: { fontWeight: 700 },
+  amount: { fontWeight: 700, fontVariant: ["tabular-nums"] },
 });

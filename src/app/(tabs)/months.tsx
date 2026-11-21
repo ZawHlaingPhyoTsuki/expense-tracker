@@ -53,6 +53,7 @@ export default function MonthsScreen() {
     diff > 0 ? theme.danger : diff < 0 ? theme.good : theme.textSecondary;
   const arrow = diff > 0 ? "▲" : diff < 0 ? "▼" : "–";
   const max = Math.max(1, ...totals.map(([, t]) => t));
+  const allTotal = totals.reduce((sum, [, t]) => sum + t, 0);
 
   return (
     <ThemedView style={styles.screen}>
@@ -60,10 +61,14 @@ export default function MonthsScreen() {
         contentContainerStyle={{
           paddingTop: insets.top + 16,
           paddingHorizontal: 20,
-          paddingBottom: 100,
+          paddingBottom: 40,
         }}
       >
         <ThemedText style={styles.title}>Months</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+          {totals.length} {totals.length === 1 ? "month" : "months"} ·{" "}
+          {formatMoney(allTotal)} total
+        </ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.card}>
           <ThemedText type="smallBold" themeColor="textSecondary">
@@ -110,14 +115,14 @@ export default function MonthsScreen() {
         {totals.map(([key, total]) => (
           <View key={key} style={styles.monthRow}>
             <View style={styles.monthTop}>
-              <ThemedText>{monthLabel(new Date(key))}</ThemedText>
+              <ThemedText style={{ fontWeight: 500 }}>
+                {monthLabel(new Date(key))}
+              </ThemedText>
               <ThemedText style={{ fontWeight: 700 }}>
                 {formatMoney(total)}
               </ThemedText>
             </View>
-            <View style={{ flexDirection: "row" }}>
-              <Bar ratio={total / max} />
-            </View>
+            <Bar ratio={total / max} />
           </View>
         ))}
       </ScrollView>
@@ -128,7 +133,8 @@ export default function MonthsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   title: { fontSize: 28, lineHeight: 36, fontWeight: 700 },
-  card: { marginTop: 16, padding: 16, borderRadius: 16, gap: 12 },
+  subtitle: { fontSize: 14, marginTop: 4 },
+  card: { marginTop: 20, padding: 16, borderRadius: 16, gap: 12 },
   cardRow: { flexDirection: "row", justifyContent: "space-between" },
   small: { fontSize: 13, lineHeight: 18 },
   big: { fontSize: 24, lineHeight: 32, fontWeight: 700 },
