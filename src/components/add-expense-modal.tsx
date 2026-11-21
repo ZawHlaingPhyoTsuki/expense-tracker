@@ -75,19 +75,6 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
   const [note, setNote] = useState("");
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [saving, setSaving] = useState(false);
-  const [wasVisible, setWasVisible] = useState(false);
-
-  // start fresh every time the sheet opens
-  if (visible !== wasVisible) {
-    setWasVisible(visible);
-    if (visible) {
-      setAmount("");
-      setCategory(CATEGORIES[0].key);
-      setNote("");
-      setDate(startOfDay(new Date()));
-      setSaving(false);
-    }
-  }
 
   const today = startOfDay(new Date());
   const yesterday = addDays(today, -1);
@@ -130,15 +117,22 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       now.getSeconds(),
     ).getTime();
 
+    let inserted = false;
     setSaving(true);
     try {
       await db
         .insert(expensesTable)
         .values({ amount: minor, category, note: note.trim(), spentAt });
+      inserted = true;
       await onSaved();
       onClose();
     } catch {
-      Alert.alert("Could not save expense", "Please try again.");
+      if (inserted) {
+        Alert.alert("Saved, but could not refresh the list", "Pull to refresh or reopen the app.");
+        onClose();
+      } else {
+        Alert.alert("Could not save expense", "Please try again.");
+      }
     } finally {
       setSaving(false);
     }
@@ -148,7 +142,7 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
     <Modal
       visible={visible}
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={saving ? () => {} : onClose}
       statusBarTranslucent
       navigationBarTranslucent
     >
@@ -168,11 +162,18 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
           </ThemedText>
           <Pressable
             onPress={onClose}
+            disabled={saving}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Cancel"
+            accessibilityState={{ disabled: saving }}
           >
-            <ThemedText style={[styles.headerAction, { color: theme.accent }]}>
+            <ThemedText
+              style={[
+                styles.headerAction,
+                { color: theme.accent, opacity: saving ? 0.45 : 1 },
+              ]}
+            >
               Cancel
             </ThemedText>
           </Pressable>

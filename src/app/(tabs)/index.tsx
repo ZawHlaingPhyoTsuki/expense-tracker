@@ -30,6 +30,7 @@ export default function DailyScreen() {
   const insets = useSafeAreaInsets();
   const [month, setMonth] = useState(() => startOfMonth());
   const [adding, setAdding] = useState(false);
+  const [addKey, setAddKey] = useState(0);
   const { rows, reload } = useMonthExpenses(month);
 
   const isCurrentMonth = month.getTime() === startOfMonth().getTime();
@@ -184,7 +185,10 @@ export default function DailyScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Add expense"
-        onPress={() => setAdding(true)}
+        onPress={() => {
+          setAddKey((k) => k + 1);
+          setAdding(true);
+        }}
         style={({ pressed }) => [
           styles.fab,
           {
@@ -200,6 +204,7 @@ export default function DailyScreen() {
       </Pressable>
 
       <AddExpenseModal
+        key={addKey}
         visible={adding}
         onClose={() => setAdding(false)}
         onSaved={reload}
