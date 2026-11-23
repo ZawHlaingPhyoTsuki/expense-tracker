@@ -7,9 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "expensetracker",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
     "android": {
       "package": "com.zawhlaingphyo.expensetracker",
       "adaptiveIcon": {
@@ -19,10 +16,6 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "server",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -35,19 +28,13 @@
         }
       ],
       "expo-sqlite",
-      "@react-native-community/datetimepicker",
-      "expo-web-browser"
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "ed34d5d6-2235-4f0f-8457-af7af4081736"
       }
