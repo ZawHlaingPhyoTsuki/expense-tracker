@@ -1,35 +1,17 @@
 import "@/global.css";
 
-export const Colors = {
-  light: {
-    text: "#18201B",
-    background: "#F5F6F4",
-    backgroundElement: "#FFFFFF",
-    backgroundSubtle: "#ECEFEB",
-    textSecondary: "#68756D",
-    accent: "#1F6A57",
-    accentSoft: "#E3F0EC",
-    onAccent: "#FFFFFF",
-    border: "#DDE3DF",
-    danger: "#C44B3F",
-    good: "#2F7A4F",
-  },
-  dark: {
-    text: "#EFF3F0",
-    background: "#141816",
-    backgroundElement: "#1C211E",
-    backgroundSubtle: "#252B28",
-    textSecondary: "#97A39C",
-    accent: "#79C7AE",
-    accentSoft: "#1E332E",
-    onAccent: "#10231D",
-    border: "#303833",
-    danger: "#F07167",
-    good: "#7DD3A7",
-  },
-} as const;
+import { DEFAULT_THEME_ID, getThemeById, type AppPalette } from "./themes";
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export { THEMES, DEFAULT_THEME_ID, getThemeById } from "./themes";
+export type { AppPalette, ThemeDefinition, ThemeId } from "./themes";
+
+// Default palette used before preference hydration and by non-context consumers.
+export const Colors = {
+  light: getThemeById(DEFAULT_THEME_ID).light,
+  dark: getThemeById(DEFAULT_THEME_ID).dark,
+} as const satisfies Record<"light" | "dark", AppPalette>;
+
+export type ThemeColor = keyof AppPalette;
 
 export const Spacing = {
   xs: 4,
@@ -46,4 +28,3 @@ export const Radius = {
   lg: 22,
   pill: 999,
 } as const;
-
