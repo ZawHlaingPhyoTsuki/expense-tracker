@@ -1,56 +1,97 @@
-# Welcome to your Expo app 👋
+# Expense Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A personal expense tracker Android app built with Expo and React Native. Data is stored locally in SQLite on the device.
 
-## Get started
+## What it does
 
-1. Install dependencies
+- **Daily tab:** month switcher, monthly total, expense count, average per day, category breakdown bars, and expenses grouped by day. Long-press an expense to delete it.
+- **Months tab:** compares this month vs last month and lists tracked months with totals/bars.
+- **Add expense modal:** amount input supports quick sums like `45+25`; category picker; Today/Yesterday/date picker; optional note. Save shows the parsed amount.
+- **Settings tab:** appearance mode (System/Light/Dark) and theme selection (Sage Green, Vercel, Cloudflare, Twitter, Claude, Supabase). Preferences are persisted locally.
+- **Data model:** amounts are stored as integer minor units (`satang`/cents) to avoid floating-point errors. Currency display is `฿` via `src/lib/money.ts`.
+- **Storage:** local SQLite database (`app.db`) managed by Expo SQLite + Drizzle ORM. Migrations are generated into `drizzle/` and applied at startup.
 
-   ```bash
-   npm install
-   ```
+## Tech stack
 
-2. Start the app
+Versions are from `package.json`:
 
-   ```bash
-   npx expo start
-   ```
+| Area | Package | Version |
+| --- | --- | --- |
+| Runtime | `expo` | `~58.0.26` |
+| UI | `react` | `19.3.0` |
+| UI | `react-native` | `0.88.1` |
+| Routing | `expo-router` | `~58.0.32` |
+| Database | `expo-sqlite` | `~58.0.18` |
+| ORM | `drizzle-orm` | `^1.0.0-rc.5` |
+| ORM tooling | `drizzle-kit` (dev) | `^1.0.0-rc.5` |
+| Updates | `expo-updates` | `~58.0.22` |
+| Language | `typescript` (dev) | `~6.0.3` |
 
-In the output, you'll find options to open the app in a
+## Project structure
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+.
+├── app.json                  # Expo config, plugins, EAS project, fingerprint runtime policy
+├── eas.json                  # EAS build/submit profiles
+├── drizzle.config.ts         # Drizzle Kit config (sqlite, expo driver)
+├── drizzle/                  # Generated SQL migrations + migrations.js metadata
+├── docs/
+│   └── RELEASING.md          # Build/update/release commands
+├── src/
+│   ├── app/                  # Expo Router routes
+│   │   ├── _layout.tsx       # Root layout, splash, DB migrations, theme/nav providers
+│   │   └── (tabs)/           # Daily, Months, Settings tabs
+│   ├── components/           # UI components (expense rows, modal, charts, themed primitives)
+│   ├── constants/            # Theme tokens and theme definitions
+│   ├── db/                   # SQLite client and Drizzle schema
+│   ├── hooks/                # Theme and data hooks
+│   ├── lib/                  # Money/date/category helpers
+│   └── providers/            # Theme preference provider (color mode + theme id)
+└── .github/workflows/
+    └── preview.yml           # PR preview EAS Update via GitHub Actions
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Getting started
 
-### Other setup steps
+### Prerequisites
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- [Bun](https://bun.sh/)
+- Android SDK/emulator or an Android device with a development build
 
-## Learn more
+### Install
 
-To learn more about developing your project with Expo, look at the following resources:
+```sh
+bun install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Run on Android
 
-## Join the community
+```sh
+bun run start
+```
 
-Join our community of developers creating universal apps.
+Then open the Android target from the Expo dev server, or run:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```sh
+bun run android
+```
+
+This project is Android-only by default. Native `android/` and `ios/` directories are not checked in; Expo/CNG and EAS handle native builds.
+
+### Database migrations
+
+- Schema: `src/db/schema.ts`
+- Drizzle config: `drizzle.config.ts`
+- Generated migrations: `drizzle/`
+
+Generate migrations after schema changes:
+
+```sh
+bun run db:generate
+```
+
+Migrations are applied at app startup in `src/app/_layout.tsx` using `useMigrations(db, migrations)` before the app UI is shown.
+
+## Releasing
+
+See [docs/RELEASING.md](docs/RELEASING.md) for fingerprint checks, EAS Build, manual EAS Update, PR preview channel testing, inspection, cleanup, and rollback commands.
