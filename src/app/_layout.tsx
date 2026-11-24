@@ -1,13 +1,21 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useMemo } from "react";
-import { StyleSheet, Text, View, useColorScheme } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrationsJs from "../../drizzle/migrations";
 
-import { Colors } from "@/constants/theme";
 import { db } from "@/db/client";
+import {
+  ThemePreferenceProvider,
+  useThemePreference,
+} from "@/providers/theme-preference";
 
 const migrations = migrationsJs as unknown as Parameters<
   typeof useMigrations
@@ -17,32 +25,46 @@ export const unstable_settings = { anchor: "(tabs)" };
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const dark = colorScheme === "dark";
-  const colors = Colors[dark ? "dark" : "light"];
-  const { success, error } = useMigrations(db, migrations);
+function RootLayoutNav() {
+  const { palette, resolvedScheme } = useThemePreference();
 
-  // Theme the native stack container too, otherwise its default white
-  // background flashes during screen transitions.
   const navTheme = useMemo(() => {
-    const base = dark ? DarkTheme : DefaultTheme;
+    const base = resolvedScheme === "dark" ? DarkTheme : DefaultTheme;
     return {
       ...base,
       colors: {
         ...base.colors,
-        background: colors.background,
-        card: colors.background,
-        text: colors.text,
-        border: colors.border,
-        primary: colors.accent,
+        background: palette.background,
+        card: palette.background,
+        text: palette.text,
+        border: palette.border,
+        primary: palette.accent,
       },
     };
-  }, [dark, colors]);
+  }, [resolvedScheme, palette]);
 
   useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(colors.background);
-  }, [colors.background]);
+    void SystemUI.setBackgroundColorAsync(palette.background);
+  }, [palette.background]);
+
+  return (
+    <ThemeProvider value={navTheme}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: palette.background },
+          headerStyle: { backgroundColor: palette.background },
+          headerTintColor: palette.text,
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  const { success, error } = useMigrations(db, migrations);
 
   useEffect(() => {
     if (success || error) SplashScreen.hideAsync();
@@ -59,18 +81,9 @@ export default function RootLayout() {
   if (!success) return null;
 
   return (
-    <ThemeProvider value={navTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.text,
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-    </ThemeProvider>
+    <ThemePreferenceProvider>
+      <RootLayoutNav />
+    </ThemePreferenceProvider>
   );
 }
 

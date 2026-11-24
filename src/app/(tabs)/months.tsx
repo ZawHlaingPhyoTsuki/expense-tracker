@@ -162,6 +162,11 @@ export default function MonthsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   title: { fontSize: 28, lineHeight: 34 },
   subtitle: { fontSize: 14, lineHeight: 20, marginTop: Spacing.xs },
   card: {
