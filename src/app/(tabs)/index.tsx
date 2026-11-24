@@ -60,7 +60,9 @@ export default function DailyScreen() {
   }, [rows]);
 
   // current month: divide by days passed so far; past months: by all days
-  const daysCounted = isCurrentMonth ? new Date().getDate() : daysInMonth(month);
+  const daysCounted = isCurrentMonth
+    ? new Date().getDate()
+    : daysInMonth(month);
   const avgPerDay = Math.round(total / Math.max(1, daysCounted));
 
   function confirmDelete(item: Expense) {
@@ -89,12 +91,14 @@ export default function DailyScreen() {
 
   const header = (
     <View style={styles.header}>
+      {/* Month switcher */}
       <MonthSwitcher
         month={month}
         onShift={(d) => setMonth(addMonths(month, d))}
         disableNext={isCurrentMonth}
       />
 
+      {/* Summary card */}
       <View
         style={[
           styles.summaryCard,
@@ -129,6 +133,7 @@ export default function DailyScreen() {
         </View>
       </View>
 
+      {/* Category breakdown */}
       <CategoryBreakdown breakdown={breakdown} total={total} />
     </View>
   );
@@ -216,6 +221,7 @@ export default function DailyScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { marginBottom: Spacing.sm },
+
   summaryCard: {
     marginTop: Spacing.lg,
     padding: Spacing.xl,
