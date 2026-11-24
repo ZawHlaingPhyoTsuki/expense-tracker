@@ -10,6 +10,7 @@ export default function AppTabs() {
       backgroundColor={theme.background}
       indicatorColor={theme.accentSoft}
       tintColor={theme.accent}
+      rippleColor={theme.accentSoft}
       labelStyle={{ selected: { color: theme.accent } }}
     >
       <NativeTabs.Trigger name="index">
