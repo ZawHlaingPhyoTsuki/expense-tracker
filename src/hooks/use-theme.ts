@@ -1,5 +1,11 @@
-import { useThemePreference } from "@/providers/theme-preference";
+import { useColorScheme } from "react-native";
+
+import { Colors } from "@/constants/theme";
+import { useOptionalThemePreference } from "@/providers/theme-preference";
 
 export function useTheme() {
-  return useThemePreference().palette;
+  const preference = useOptionalThemePreference();
+  const scheme = useColorScheme();
+  if (preference) return preference.palette;
+  return Colors[scheme === "dark" ? "dark" : "light"];
 }

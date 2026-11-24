@@ -113,3 +113,7 @@ export function useThemePreference() {
   }
   return ctx;
 }
+
+export function useOptionalThemePreference() {
+  return useContext(ThemePreferenceContext);
+}
