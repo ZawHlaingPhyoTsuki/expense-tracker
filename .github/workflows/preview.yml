@@ -42,4 +42,9 @@ jobs:
       - name: Publish preview update
         uses: expo/expo-github-action/preview@v8
         with:
-          command: eas update --auto --platform android
+          command: >-
+            eas update
+            --branch pr-${{ github.event.pull_request.number }}
+            --message "PR ${{ github.event.pull_request.number }} (${{ github.sha }})"
+            --platform android
+            --environment preview

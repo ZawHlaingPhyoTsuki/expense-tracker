@@ -19,7 +19,6 @@
     "production": {
       "autoIncrement": true,
       "channel": "production"
-      // AAB is default for production (required by Play Store)
     }
   },
   "submit": {
