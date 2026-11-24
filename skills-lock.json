@@ -7,6 +7,13 @@
       "skillPath": "skills/antislop/SKILL.md",
       "computedHash": "5db1f692cb9722e0f642e9a378d8c44b011a102726efb41bf0003c8c37f0a137"
     },
+    "eas-workflows": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/eas-workflows/SKILL.md",
+      "computedHash": "b739a2c65fa06935af11986d2775d64a42dde9cfa548dd5eec2d0e3e813691c3"
+    },
     "expo-design-system": {
       "source": "expo/skills",
       "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
@@ -20,6 +27,13 @@
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-native-ui/SKILL.md",
       "computedHash": "7062d8239c825963bc4487678165c843594b9950276b18f1c5d48179414518eb"
+    },
+    "expo-overview": {
+      "source": "expo/skills",
+      "commit": "88d9bd79f3fa8452a778fbac65bae162c0b32ce4",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-overview/SKILL.md",
+      "computedHash": "c59584f70706a6873c5c1f3ee1f9005fc00bdd40de731645c1b7091a1fd2397d"
     },
     "expo-project-structure": {
       "source": "expo/skills",
