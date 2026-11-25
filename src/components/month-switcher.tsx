@@ -20,6 +20,7 @@ export function MonthSwitcher({ month, onShift, disableNext }: Props) {
 
   return (
     <View style={styles.row}>
+      {/* Previous month button */}
       <Pressable
         onPress={() => onShift(-1)}
         hitSlop={8}
@@ -33,9 +34,13 @@ export function MonthSwitcher({ month, onShift, disableNext }: Props) {
       >
         <ThemedText style={styles.arrow}>‹</ThemedText>
       </Pressable>
+
+      {/* Current month label */}
       <ThemedText type="default" style={styles.label}>
         {monthLabel(month)}
       </ThemedText>
+
+      {/* Next month button */}
       <Pressable
         onPress={() => onShift(1)}
         hitSlop={8}

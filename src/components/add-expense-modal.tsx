@@ -11,17 +11,30 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { eq } from "drizzle-orm";
 
 import { Radius, Spacing } from "@/constants/theme";
 import { ThemedInput } from "@/components/themed-input";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { db } from "@/db/client";
-import { expensesTable } from "@/db/schema";
+import { expensesTable, type Expense } from "@/db/schema";
 import { useTheme } from "@/hooks/use-theme";
 import { CATEGORIES } from "@/lib/categories";
-import { addDays, formatShortDate, isSameDay, startOfDay } from "@/lib/dates";
+import {
+  addDays,
+  formatShortDate,
+  isSameDay,
+  startOfDay,
+  withTimeOf,
+} from "@/lib/dates";
 import { CURRENCY, formatMoney, parseAmount } from "@/lib/money";
+
+function formatAmountInput(minor: number) {
+  return minor % 100 === 0
+    ? String(minor / 100)
+    : (minor / 100).toFixed(2).replace(/\.?0+$/, "");
+}
 
 function Chip({
   label,
@@ -63,17 +76,23 @@ function Chip({
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSaved: () => void | Promise<void>;
+  expense?: Expense;
 };
 
-export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
+export function AddExpenseModal({ visible, onClose, expense }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<string>(CATEGORIES[0].key);
-  const [note, setNote] = useState("");
-  const [date, setDate] = useState(() => startOfDay(new Date()));
+  const [amount, setAmount] = useState(() =>
+    expense ? formatAmountInput(expense.amount) : "",
+  );
+  const [category, setCategory] = useState<string>(
+    () => expense?.category ?? CATEGORIES[0].key,
+  );
+  const [note, setNote] = useState(() => expense?.note ?? "");
+  const [date, setDate] = useState(() =>
+    startOfDay(new Date(expense?.spentAt ?? Date.now())),
+  );
   const [saving, setSaving] = useState(false);
 
   const today = startOfDay(new Date());
@@ -107,32 +126,26 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       return;
     }
 
-    const now = new Date();
-    const spentAt = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds(),
-    ).getTime();
+    const original = expense ? new Date(expense.spentAt) : null;
+    const spentAt =
+      original && isSameDay(date, original)
+        ? original.getTime()
+        : withTimeOf(date, original ?? new Date()).getTime();
+    const values = { amount: minor, category, note: note.trim(), spentAt };
 
-    let inserted = false;
     setSaving(true);
     try {
-      await db
-        .insert(expensesTable)
-        .values({ amount: minor, category, note: note.trim(), spentAt });
-      inserted = true;
-      await onSaved();
+      if (expense) {
+        await db
+          .update(expensesTable)
+          .set(values)
+          .where(eq(expensesTable.id, expense.id));
+      } else {
+        await db.insert(expensesTable).values(values);
+      }
       onClose();
     } catch {
-      if (inserted) {
-        Alert.alert("Saved, but could not refresh the list", "Pull to refresh or reopen the app.");
-        onClose();
-      } else {
-        Alert.alert("Could not save expense", "Please try again.");
-      }
+      Alert.alert("Could not save expense", "Please try again.");
     } finally {
       setSaving(false);
     }
@@ -158,7 +171,7 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
           ]}
         >
           <ThemedText type="subtitle" style={styles.headerTitle}>
-            New expense
+            {expense ? "Edit expense" : "New expense"}
           </ThemedText>
           <Pressable
             onPress={onClose}
@@ -327,7 +340,9 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
                   ? "Saving…"
                   : parsed !== null
                     ? `Save ${formatMoney(parsed)}`
-                    : "Save expense"}
+                    : expense
+                      ? "Save changes"
+                      : "Save expense"}
               </ThemedText>
             </Pressable>
           </View>

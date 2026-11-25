@@ -1,58 +1,25 @@
-import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
 
 import { Bar } from "@/components/bar";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Radius, Spacing } from "@/constants/theme";
-import { db } from "@/db/client";
-import { expensesTable } from "@/db/schema";
 import { useTheme } from "@/hooks/use-theme";
-import { addMonths, monthLabel, startOfMonth } from "@/lib/dates";
+import { useMonthlyStats } from "@/hooks/use-monthly-stats";
+import { addMonths, monthLabel } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 
 export default function MonthsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [totals, setTotals] = useState<[number, number][]>([]);
+  const { totals, stats, allTotal, max, loaded, error, retry } =
+    useMonthlyStats();
 
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true;
-      (async () => {
-        const result = await db
-          .select({
-            amount: expensesTable.amount,
-            spentAt: expensesTable.spentAt,
-          })
-          .from(expensesTable);
-        if (!alive) return;
-        const map = new Map<number, number>();
-        for (const r of result) {
-          const key = startOfMonth(new Date(r.spentAt)).getTime();
-          map.set(key, (map.get(key) ?? 0) + r.amount);
-        }
-        setTotals([...map.entries()].sort((a, b) => b[0] - a[0]));
-      })();
-      return () => {
-        alive = false;
-      };
-    }, []),
-  );
-
-  const map = new Map(totals);
-  const thisMonth = startOfMonth();
-  const thisTotal = map.get(thisMonth.getTime()) ?? 0;
-  const lastTotal = map.get(addMonths(thisMonth, -1).getTime()) ?? 0;
-  const diff = thisTotal - lastTotal;
-  const pct = lastTotal > 0 ? Math.round((diff / lastTotal) * 100) : null;
+  const { thisTotal, lastTotal, diff, pct } = stats;
   const diffColor =
     diff > 0 ? theme.danger : diff < 0 ? theme.good : theme.textSecondary;
   const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "–";
-  const max = Math.max(1, ...totals.map(([, t]) => t));
-  const allTotal = totals.reduce((sum, [, t]) => sum + t, 0);
 
   return (
     <ThemedView style={styles.screen}>
@@ -66,58 +33,8 @@ export default function MonthsScreen() {
         <ThemedText type="subtitle" style={styles.title}>
           Months
         </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          {totals.length} {totals.length === 1 ? "month" : "months"} tracked ·{" "}
-          {formatMoney(allTotal)} total
-        </ThemedText>
 
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          <ThemedText type="label" themeColor="textSecondary">
-            This month vs last month
-          </ThemedText>
-
-          <View style={styles.compareRow}>
-            <View style={styles.compareCol}>
-              <ThemedText themeColor="textSecondary" style={styles.small}>
-                {monthLabel(thisMonth)}
-              </ThemedText>
-              <ThemedText style={styles.big}>{formatMoney(thisTotal)}</ThemedText>
-            </View>
-            <View style={[styles.compareCol, styles.compareRight]}>
-              <ThemedText themeColor="textSecondary" style={styles.small}>
-                {monthLabel(addMonths(thisMonth, -1))}
-              </ThemedText>
-              <ThemedText style={styles.big}>{formatMoney(lastTotal)}</ThemedText>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.delta,
-              { backgroundColor: theme.backgroundSubtle },
-            ]}
-          >
-            <ThemedText style={[styles.deltaText, { color: diffColor }]}>
-              {lastTotal === 0
-                ? "No data last month"
-                : `${arrow} ${formatMoney(Math.abs(diff))} (${diff > 0 ? "+" : ""}${pct}%)`}
-            </ThemedText>
-          </View>
-        </View>
-
-        <ThemedText type="label" themeColor="textSecondary" style={styles.section}>
-          All months
-        </ThemedText>
-
-        {totals.length === 0 ? (
+        {error ? (
           <View
             style={[
               styles.empty,
@@ -127,33 +44,131 @@ export default function MonthsScreen() {
               },
             ]}
           >
-            <ThemedText themeColor="textSecondary">No expenses yet.</ThemedText>
+            <ThemedText style={styles.errorTitle}>
+              Could not load months
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.errorText}>
+              Check your database and try again.
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              onPress={retry}
+              style={({ pressed }) => [
+                styles.retryButton,
+                {
+                  backgroundColor: theme.accentSoft,
+                  borderColor: theme.accent,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={[styles.retryText, { color: theme.accent }]}>
+                Retry
+              </ThemedText>
+            </Pressable>
           </View>
         ) : (
-          <View style={styles.list}>
-            {totals.map(([key, total]) => (
+          <>
+            <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+              {totals.length} {totals.length === 1 ? "month" : "months"} tracked
+              · {formatMoney(allTotal)} total
+            </ThemedText>
+
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <ThemedText type="label" themeColor="textSecondary">
+                This month vs last month
+              </ThemedText>
+
+              <View style={styles.compareRow}>
+                <View style={styles.compareCol}>
+                  <ThemedText themeColor="textSecondary" style={styles.small}>
+                    {monthLabel(new Date())}
+                  </ThemedText>
+                  <ThemedText style={styles.big}>
+                    {formatMoney(thisTotal)}
+                  </ThemedText>
+                </View>
+                <View style={[styles.compareCol, styles.compareRight]}>
+                  <ThemedText themeColor="textSecondary" style={styles.small}>
+                    {monthLabel(addMonths(new Date(), -1))}
+                  </ThemedText>
+                  <ThemedText style={styles.big}>
+                    {formatMoney(lastTotal)}
+                  </ThemedText>
+                </View>
+              </View>
+
               <View
-                key={key}
                 style={[
-                  styles.monthRow,
+                  styles.delta,
+                  { backgroundColor: theme.backgroundSubtle },
+                ]}
+              >
+                <ThemedText style={[styles.deltaText, { color: diffColor }]}>
+                  {lastTotal === 0
+                    ? "No data last month"
+                    : `${arrow} ${formatMoney(Math.abs(diff))} (${diff > 0 ? "+" : ""}${pct}%)`}
+                </ThemedText>
+              </View>
+            </View>
+
+            <ThemedText
+              type="label"
+              themeColor="textSecondary"
+              style={styles.section}
+            >
+              All months
+            </ThemedText>
+
+            {loaded && totals.length === 0 ? (
+              <View
+                style={[
+                  styles.empty,
                   {
                     backgroundColor: theme.backgroundElement,
                     borderColor: theme.border,
                   },
                 ]}
               >
-                <View style={styles.monthTop}>
-                  <ThemedText style={styles.monthLabel}>
-                    {monthLabel(new Date(key))}
-                  </ThemedText>
-                  <ThemedText style={styles.monthValue}>
-                    {formatMoney(total)}
-                  </ThemedText>
-                </View>
-                <Bar ratio={total / max} />
+                <ThemedText themeColor="textSecondary">
+                  No expenses yet.
+                </ThemedText>
               </View>
-            ))}
-          </View>
+            ) : (
+              <View style={styles.list}>
+                {totals.map(([key, total]) => (
+                  <View
+                    key={key}
+                    style={[
+                      styles.monthRow,
+                      {
+                        backgroundColor: theme.backgroundElement,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.monthTop}>
+                      <ThemedText style={styles.monthLabel}>
+                        {monthLabel(new Date(key))}
+                      </ThemedText>
+                      <ThemedText style={styles.monthValue}>
+                        {formatMoney(total)}
+                      </ThemedText>
+                    </View>
+                    <Bar ratio={total / max} />
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </ThemedView>
@@ -212,5 +227,16 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
     alignItems: "center",
+    gap: Spacing.xs,
   },
+  errorTitle: { fontSize: 16, lineHeight: 22, fontWeight: "700" },
+  errorText: { textAlign: "center", fontSize: 14, lineHeight: 20 },
+  retryButton: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  retryText: { fontSize: 14, fontWeight: "700" },
 });

@@ -1,30 +1,30 @@
-import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useState } from "react";
 import { and, desc, gte, lt } from "drizzle-orm";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+
 import { db } from "@/db/client";
-import { expensesTable, type Expense } from "@/db/schema";
+import { expensesTable } from "@/db/schema";
 import { addMonths } from "@/lib/dates";
 
-/** Loads one month of expenses (newest first). Reloads every time the screen is focused. */
+/** Loads one month of expenses (newest first), live-updating on DB changes. */
 export function useMonthExpenses(month: Date) {
-  const [rows, setRows] = useState<Expense[]>([]);
   const start = month.getTime();
+  const end = addMonths(new Date(start), 1).getTime();
+  const [retryNonce, setRetryNonce] = useState(0);
 
-  const load = useCallback(async () => {
-    const end = addMonths(new Date(start), 1).getTime();
-    const result = await db
+  const { data, error, updatedAt } = useLiveQuery(
+    db
       .select()
       .from(expensesTable)
       .where(and(gte(expensesTable.spentAt, start), lt(expensesTable.spentAt, end)))
-      .orderBy(desc(expensesTable.spentAt));
-    setRows(result);
-  }, [start]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
+      .orderBy(desc(expensesTable.spentAt)),
+    [start, end, retryNonce],
   );
 
-  return { rows, reload: load };
+  return {
+    rows: data ?? [],
+    loaded: updatedAt !== undefined,
+    error,
+    retry: () => setRetryNonce((n) => n + 1),
+  };
 }
