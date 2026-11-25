@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, SectionList, StyleSheet, View } from "react-native";
+import { Pressable, SectionList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { eq } from "drizzle-orm";
 
 import { AddExpenseModal } from "@/components/add-expense-modal";
 import { CategoryBreakdown } from "@/components/category-breakdown";
@@ -10,20 +9,12 @@ import { MonthSwitcher } from "@/components/month-switcher";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Radius, Spacing } from "@/constants/theme";
-import { db } from "@/db/client";
-import { expensesTable, type Expense } from "@/db/schema";
+import { useDeleteExpense } from "@/hooks/use-delete-expense";
 import { useMonthExpenses } from "@/hooks/use-month-expenses";
 import { useTheme } from "@/hooks/use-theme";
-import {
-  addMonths,
-  daysInMonth,
-  formatDay,
-  startOfDay,
-  startOfMonth,
-} from "@/lib/dates";
+import { addMonths, startOfMonth } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
-
-type DaySection = { title: string; total: number; data: Expense[] };
+import { averagePerDay, summarizeMonth } from "@/lib/stats";
 
 export default function DailyScreen() {
   const theme = useTheme();
@@ -32,61 +23,14 @@ export default function DailyScreen() {
   const [adding, setAdding] = useState(false);
   const [addKey, setAddKey] = useState(0);
   const { rows, loaded } = useMonthExpenses(month);
+  const confirmDelete = useDeleteExpense();
 
   const isCurrentMonth = month.getTime() === startOfMonth().getTime();
-
-  const { total, breakdown, sections } = useMemo(() => {
-    const cats = new Map<string, number>();
-    const days = new Map<number, DaySection>();
-    let sum = 0;
-    // rows are already newest first, so Map insertion order = newest day first
-    for (const r of rows) {
-      sum += r.amount;
-      cats.set(r.category, (cats.get(r.category) ?? 0) + r.amount);
-      const key = startOfDay(new Date(r.spentAt)).getTime();
-      let day = days.get(key);
-      if (!day) {
-        day = { title: formatDay(r.spentAt), total: 0, data: [] };
-        days.set(key, day);
-      }
-      day.total += r.amount;
-      day.data.push(r);
-    }
-    return {
-      total: sum,
-      breakdown: [...cats.entries()].sort((a, b) => b[1] - a[1]),
-      sections: [...days.values()],
-    };
-  }, [rows]);
-
-  // current month: divide by days passed so far; past months: by all days
-  const daysCounted = isCurrentMonth
-    ? new Date().getDate()
-    : daysInMonth(month);
-  const avgPerDay = Math.round(total / Math.max(1, daysCounted));
-
-  function confirmDelete(item: Expense) {
-    Alert.alert(
-      "Delete expense?",
-      `${formatMoney(item.amount)} · ${item.note || item.category}`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await db
-                .delete(expensesTable)
-                .where(eq(expensesTable.id, item.id));
-            } catch {
-              Alert.alert("Could not delete expense", "Please try again.");
-            }
-          },
-        },
-      ],
-    );
-  }
+  const { total, breakdown, sections } = useMemo(
+    () => summarizeMonth(rows),
+    [rows],
+  );
+  const avg = averagePerDay(total, month);
 
   const header = (
     <View style={styles.header}>
@@ -123,7 +67,7 @@ export default function DailyScreen() {
           />
           <View style={styles.stat}>
             <ThemedText style={styles.statValue}>
-              {formatMoney(avgPerDay)}
+              {formatMoney(avg)}
             </ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.statLabel}>
               avg / day

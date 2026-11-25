@@ -12,6 +12,7 @@ import { expensesTable } from "@/db/schema";
 import { useTheme } from "@/hooks/use-theme";
 import { addMonths, monthLabel, startOfMonth } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { compareMonths, totalsByMonth } from "@/lib/stats";
 
 export default function MonthsScreen() {
   const theme = useTheme();
@@ -26,21 +27,10 @@ export default function MonthsScreen() {
   );
   const loaded = updatedAt !== undefined;
 
-  const totals = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const r of data ?? []) {
-      const key = startOfMonth(new Date(r.spentAt)).getTime();
-      map.set(key, (map.get(key) ?? 0) + r.amount);
-    }
-    return [...map.entries()].sort((a, b) => b[0] - a[0]);
-  }, [data]);
-
-  const map = new Map(totals);
+  const totals = useMemo(() => totalsByMonth(data ?? []), [data]);
   const thisMonth = startOfMonth();
-  const thisTotal = map.get(thisMonth.getTime()) ?? 0;
-  const lastTotal = map.get(addMonths(thisMonth, -1).getTime()) ?? 0;
-  const diff = thisTotal - lastTotal;
-  const pct = lastTotal > 0 ? Math.round((diff / lastTotal) * 100) : null;
+  const { thisTotal, lastTotal, diff, pct } = compareMonths(totals, thisMonth);
+
   const diffColor =
     diff > 0 ? theme.danger : diff < 0 ? theme.good : theme.textSecondary;
   const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "–";
