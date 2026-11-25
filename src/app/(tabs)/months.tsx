@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 
@@ -17,15 +17,18 @@ import { compareMonths, totalsByMonth } from "@/lib/stats";
 export default function MonthsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { data, updatedAt } = useLiveQuery(
+  const [retryNonce, setRetryNonce] = useState(0);
+  const { data, error, updatedAt } = useLiveQuery(
     db
       .select({
         amount: expensesTable.amount,
         spentAt: expensesTable.spentAt,
       })
       .from(expensesTable),
+    [retryNonce],
   );
   const loaded = updatedAt !== undefined;
+  const retry = () => setRetryNonce((n) => n + 1);
 
   const totals = useMemo(() => totalsByMonth(data ?? []), [data]);
   const thisMonth = startOfMonth();
@@ -100,7 +103,40 @@ export default function MonthsScreen() {
           All months
         </ThemedText>
 
-        {loaded && totals.length === 0 ? (
+        {error ? (
+          <View
+            style={[
+              styles.empty,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <ThemedText style={styles.errorTitle}>
+              Could not load months
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.errorText}>
+              Check your database and try again.
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              onPress={retry}
+              style={({ pressed }) => [
+                styles.retryButton,
+                {
+                  backgroundColor: theme.accentSoft,
+                  borderColor: theme.accent,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={[styles.retryText, { color: theme.accent }]}>
+                Retry
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : loaded && totals.length === 0 ? (
           <View
             style={[
               styles.empty,
@@ -195,5 +231,16 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
     alignItems: "center",
+    gap: Spacing.xs,
   },
+  errorTitle: { fontSize: 16, lineHeight: 22, fontWeight: "700" },
+  errorText: { textAlign: "center", fontSize: 14, lineHeight: 20 },
+  retryButton: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  retryText: { fontSize: 14, fontWeight: "700" },
 });

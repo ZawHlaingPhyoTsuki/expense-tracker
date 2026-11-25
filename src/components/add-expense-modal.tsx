@@ -126,13 +126,12 @@ export function AddExpenseModal({ visible, onClose, expense }: Props) {
       return;
     }
 
-    const timeSource = expense ? new Date(expense.spentAt) : new Date();
-    const values = {
-      amount: minor,
-      category,
-      note: note.trim(),
-      spentAt: withTimeOf(date, timeSource).getTime(),
-    };
+    const original = expense ? new Date(expense.spentAt) : null;
+    const spentAt =
+      original && isSameDay(date, original)
+        ? original.getTime()
+        : withTimeOf(date, original ?? new Date()).getTime();
+    const values = { amount: minor, category, note: note.trim(), spentAt };
 
     setSaving(true);
     try {

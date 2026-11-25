@@ -41,8 +41,13 @@ export function DeleteExpenseDialog({ expense, onClose }: Props) {
       statusBarTranslucent
       navigationBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={close}>
+      <Pressable
+        accessible={false}
+        style={styles.backdrop}
+        onPress={close}
+      >
         <Pressable
+          accessible={false}
           style={[
             styles.card,
             {

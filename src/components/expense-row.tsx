@@ -18,6 +18,7 @@ export function ExpenseRow({ item, onPress, onLongPress }: Props) {
   const theme = useTheme();
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={() => onPress(item)}
       onLongPress={() => onLongPress(item)}
       accessibilityHint="Tap to edit, hold to delete"

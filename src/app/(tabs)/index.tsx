@@ -24,7 +24,7 @@ export default function DailyScreen() {
   const [form, setForm] = useState<{ expense?: Expense } | null>(null);
   const [addKey, setAddKey] = useState(0);
   const [toDelete, setToDelete] = useState<Expense | null>(null);
-  const { rows, loaded } = useMonthExpenses(month);
+  const { rows, loaded, error, retry } = useMonthExpenses(month);
 
   const isCurrentMonth = month.getTime() === startOfMonth().getTime();
   const { total, breakdown, sections } = useMemo(
@@ -89,7 +89,38 @@ export default function DailyScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          loaded ? (
+          error ? (
+            <View
+              style={[
+                styles.empty,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <ThemedText style={styles.emptyTitle}>Could not load expenses</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                Check your database and try again.
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                onPress={retry}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  {
+                    backgroundColor: theme.accentSoft,
+                    borderColor: theme.accent,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <ThemedText style={[styles.retryText, { color: theme.accent }]}>
+                  Retry
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : loaded ? (
             <View
               style={[
                 styles.empty,
@@ -230,6 +261,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 18, lineHeight: 24, fontWeight: "700" },
   emptyText: { textAlign: "center", fontSize: 14, lineHeight: 20 },
+  retryButton: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  retryText: { fontSize: 14, fontWeight: "700" },
   hint: { textAlign: "center", fontSize: 12, marginTop: Spacing.lg },
   fab: {
     position: "absolute",

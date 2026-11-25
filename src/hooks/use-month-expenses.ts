@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { and, desc, gte, lt } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 
@@ -9,15 +10,21 @@ import { addMonths } from "@/lib/dates";
 export function useMonthExpenses(month: Date) {
   const start = month.getTime();
   const end = addMonths(new Date(start), 1).getTime();
+  const [retryNonce, setRetryNonce] = useState(0);
 
-  const { data, updatedAt } = useLiveQuery(
+  const { data, error, updatedAt } = useLiveQuery(
     db
       .select()
       .from(expensesTable)
       .where(and(gte(expensesTable.spentAt, start), lt(expensesTable.spentAt, end)))
       .orderBy(desc(expensesTable.spentAt)),
-    [start, end],
+    [start, end, retryNonce],
   );
 
-  return { rows: data ?? [], loaded: updatedAt !== undefined };
+  return {
+    rows: data ?? [],
+    loaded: updatedAt !== undefined,
+    error,
+    retry: () => setRetryNonce((n) => n + 1),
+  };
 }
