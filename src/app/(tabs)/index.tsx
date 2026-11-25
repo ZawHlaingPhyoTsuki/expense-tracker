@@ -31,7 +31,7 @@ export default function DailyScreen() {
   const [month, setMonth] = useState(() => startOfMonth());
   const [adding, setAdding] = useState(false);
   const [addKey, setAddKey] = useState(0);
-  const { rows, reload } = useMonthExpenses(month);
+  const { rows, loaded } = useMonthExpenses(month);
 
   const isCurrentMonth = month.getTime() === startOfMonth().getTime();
 
@@ -79,7 +79,6 @@ export default function DailyScreen() {
               await db
                 .delete(expensesTable)
                 .where(eq(expensesTable.id, item.id));
-              await reload();
             } catch {
               Alert.alert("Could not delete expense", "Please try again.");
             }
@@ -145,20 +144,22 @@ export default function DailyScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          <View
-            style={[
-              styles.empty,
-              {
-                backgroundColor: theme.backgroundElement,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <ThemedText style={styles.emptyTitle}>No expenses yet</ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-              Tap + to log your first expense for this month.
-            </ThemedText>
-          </View>
+          loaded ? (
+            <View
+              style={[
+                styles.empty,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <ThemedText style={styles.emptyTitle}>No expenses yet</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                Tap + to log your first expense for this month.
+              </ThemedText>
+            </View>
+          ) : undefined
         }
         ListFooterComponent={
           rows.length > 0 ? (
@@ -212,7 +213,6 @@ export default function DailyScreen() {
         key={addKey}
         visible={adding}
         onClose={() => setAdding(false)}
-        onSaved={reload}
       />
     </ThemedView>
   );

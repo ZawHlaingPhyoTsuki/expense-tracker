@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 
 import { Bar } from "@/components/bar";
 import { ThemedText } from "@/components/themed-text";
@@ -16,31 +16,24 @@ import { formatMoney } from "@/lib/money";
 export default function MonthsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [totals, setTotals] = useState<[number, number][]>([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true;
-      (async () => {
-        const result = await db
-          .select({
-            amount: expensesTable.amount,
-            spentAt: expensesTable.spentAt,
-          })
-          .from(expensesTable);
-        if (!alive) return;
-        const map = new Map<number, number>();
-        for (const r of result) {
-          const key = startOfMonth(new Date(r.spentAt)).getTime();
-          map.set(key, (map.get(key) ?? 0) + r.amount);
-        }
-        setTotals([...map.entries()].sort((a, b) => b[0] - a[0]));
-      })();
-      return () => {
-        alive = false;
-      };
-    }, []),
+  const { data, updatedAt } = useLiveQuery(
+    db
+      .select({
+        amount: expensesTable.amount,
+        spentAt: expensesTable.spentAt,
+      })
+      .from(expensesTable),
   );
+  const loaded = updatedAt !== undefined;
+
+  const totals = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const r of data ?? []) {
+      const key = startOfMonth(new Date(r.spentAt)).getTime();
+      map.set(key, (map.get(key) ?? 0) + r.amount);
+    }
+    return [...map.entries()].sort((a, b) => b[0] - a[0]);
+  }, [data]);
 
   const map = new Map(totals);
   const thisMonth = startOfMonth();
@@ -117,7 +110,7 @@ export default function MonthsScreen() {
           All months
         </ThemedText>
 
-        {totals.length === 0 ? (
+        {loaded && totals.length === 0 ? (
           <View
             style={[
               styles.empty,
@@ -129,7 +122,7 @@ export default function MonthsScreen() {
           >
             <ThemedText themeColor="textSecondary">No expenses yet.</ThemedText>
           </View>
-        ) : (
+        ) : totals.length > 0 ? (
           <View style={styles.list}>
             {totals.map(([key, total]) => (
               <View
@@ -154,7 +147,7 @@ export default function MonthsScreen() {
               </View>
             ))}
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </ThemedView>
   );

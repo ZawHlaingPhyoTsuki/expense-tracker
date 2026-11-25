@@ -1,1 +1,6 @@
-- setting screen with theme toggle
+- calender style with time 
+- edit 
+- delete dialog UI redesign
+- add floating button position adjust
+- export data
+- category breakdown UI in index.tsx redesign

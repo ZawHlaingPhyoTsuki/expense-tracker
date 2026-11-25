@@ -63,10 +63,9 @@ function Chip({
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSaved: () => void | Promise<void>;
 };
 
-export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
+export function AddExpenseModal({ visible, onClose }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -117,22 +116,14 @@ export function AddExpenseModal({ visible, onClose, onSaved }: Props) {
       now.getSeconds(),
     ).getTime();
 
-    let inserted = false;
     setSaving(true);
     try {
       await db
         .insert(expensesTable)
         .values({ amount: minor, category, note: note.trim(), spentAt });
-      inserted = true;
-      await onSaved();
       onClose();
     } catch {
-      if (inserted) {
-        Alert.alert("Saved, but could not refresh the list", "Pull to refresh or reopen the app.");
-        onClose();
-      } else {
-        Alert.alert("Could not save expense", "Please try again.");
-      }
+      Alert.alert("Could not save expense", "Please try again.");
     } finally {
       setSaving(false);
     }
