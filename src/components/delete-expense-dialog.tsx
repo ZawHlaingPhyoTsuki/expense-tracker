@@ -24,11 +24,11 @@ export function DeleteExpenseDialog({ expense, onClose }: Props) {
     setDeleting(true);
     try {
       await db.delete(expensesTable).where(eq(expensesTable.id, expense.id));
+      setDeleting(false);
       onClose();
     } catch {
-      Alert.alert("Could not delete expense", "Please try again.");
-    } finally {
       setDeleting(false);
+      Alert.alert("Could not delete expense", "Please try again.");
     }
   }
 

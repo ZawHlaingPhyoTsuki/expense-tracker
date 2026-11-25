@@ -52,20 +52,56 @@ export default function MonthsScreen() {
         <ThemedText type="subtitle" style={styles.title}>
           Months
         </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          {totals.length} {totals.length === 1 ? "month" : "months"} tracked ·{" "}
-          {formatMoney(allTotal)} total
-        </ThemedText>
+        {error ? (
+          <View
+            style={[
+              styles.empty,
+              {
+                marginTop: Spacing.xl,
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <ThemedText style={styles.errorTitle}>
+              Could not load months
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.errorText}>
+              Check your database and try again.
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              onPress={retry}
+              style={({ pressed }) => [
+                styles.retryButton,
+                {
+                  backgroundColor: theme.accentSoft,
+                  borderColor: theme.accent,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={[styles.retryText, { color: theme.accent }]}>
+                Retry
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+              {totals.length} {totals.length === 1 ? "month" : "months"} tracked ·{" "}
+              {formatMoney(allTotal)} total
+            </ThemedText>
 
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.border,
-            },
-          ]}
-        >
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
           <ThemedText type="label" themeColor="textSecondary">
             This month vs last month
           </ThemedText>
@@ -103,40 +139,7 @@ export default function MonthsScreen() {
           All months
         </ThemedText>
 
-        {error ? (
-          <View
-            style={[
-              styles.empty,
-              {
-                backgroundColor: theme.backgroundElement,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <ThemedText style={styles.errorTitle}>
-              Could not load months
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.errorText}>
-              Check your database and try again.
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={retry}
-              style={({ pressed }) => [
-                styles.retryButton,
-                {
-                  backgroundColor: theme.accentSoft,
-                  borderColor: theme.accent,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <ThemedText style={[styles.retryText, { color: theme.accent }]}>
-                Retry
-              </ThemedText>
-            </Pressable>
-          </View>
-        ) : loaded && totals.length === 0 ? (
+        {loaded && totals.length === 0 ? (
           <View
             style={[
               styles.empty,
@@ -174,6 +177,8 @@ export default function MonthsScreen() {
             ))}
           </View>
         ) : null}
+          </>
+        )}
       </ScrollView>
     </ThemedView>
   );

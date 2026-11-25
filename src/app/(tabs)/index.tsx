@@ -33,7 +33,7 @@ export default function DailyScreen() {
   );
   const avg = averagePerDay(total, month);
 
-  const header = (
+  const header = error ? undefined : (
     <View style={styles.header}>
       {/* Month switcher */}
       <MonthSwitcher

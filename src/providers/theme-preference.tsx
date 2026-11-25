@@ -84,14 +84,18 @@ export function ThemePreferenceProvider({ children }: PropsWithChildren) {
     setColorModeState(mode);
     try {
       Storage.setItemSync(COLOR_MODE_KEY, mode);
-    } catch {}
+    } catch (error) {
+      console.warn("Could not save color mode", error);
+    }
   }, []);
 
   const setThemeId = useCallback((id: ThemeId) => {
     setThemeIdState(id);
     try {
       Storage.setItemSync(THEME_ID_KEY, id);
-    } catch {}
+    } catch (error) {
+      console.warn("Could not save theme", error);
+    }
   }, []);
 
   const value = useMemo(
