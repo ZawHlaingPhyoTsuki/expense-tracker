@@ -26,7 +26,9 @@ export function CategoryBreakdown({ breakdown, total }: Props) {
         {breakdown.map(([cat, sum]) => (
           <View key={cat} style={styles.row}>
             <ThemedText style={styles.label} numberOfLines={1}>
-              {emojiFor(cat)} {cat}
+              {emojiFor(cat)}
+              {"  "}
+              {cat}
             </ThemedText>
             <Bar ratio={sum / total} />
             <ThemedText themeColor="textSecondary" style={styles.value}>

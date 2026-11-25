@@ -12,6 +12,18 @@ export const addMonths = (d: Date, n: number) =>
 export const addDays = (d: Date, n: number) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 
+/** Calendar day from `day`, clock time from `time`. */
+export const withTimeOf = (day: Date, time: Date) =>
+  new Date(
+    day.getFullYear(),
+    day.getMonth(),
+    day.getDate(),
+    time.getHours(),
+    time.getMinutes(),
+    time.getSeconds(),
+    time.getMilliseconds(),
+  );
+
 export const daysInMonth = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 
