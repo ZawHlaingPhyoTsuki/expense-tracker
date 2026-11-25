@@ -4,12 +4,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddExpenseModal } from "@/components/add-expense-modal";
 import { CategoryBreakdown } from "@/components/category-breakdown";
+import { DeleteExpenseDialog } from "@/components/delete-expense-dialog";
 import { ExpenseRow } from "@/components/expense-row";
 import { MonthSwitcher } from "@/components/month-switcher";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Radius, Spacing } from "@/constants/theme";
-import { useDeleteExpense } from "@/hooks/use-delete-expense";
+import type { Expense } from "@/db/schema";
 import { useMonthExpenses } from "@/hooks/use-month-expenses";
 import { useTheme } from "@/hooks/use-theme";
 import { addMonths, startOfMonth } from "@/lib/dates";
@@ -20,10 +21,10 @@ export default function DailyScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [month, setMonth] = useState(() => startOfMonth());
-  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState<{ expense?: Expense } | null>(null);
   const [addKey, setAddKey] = useState(0);
+  const [toDelete, setToDelete] = useState<Expense | null>(null);
   const { rows, loaded } = useMonthExpenses(month);
-  const confirmDelete = useDeleteExpense();
 
   const isCurrentMonth = month.getTime() === startOfMonth().getTime();
   const { total, breakdown, sections } = useMemo(
@@ -108,7 +109,7 @@ export default function DailyScreen() {
         ListFooterComponent={
           rows.length > 0 ? (
             <ThemedText themeColor="textSecondary" style={styles.hint}>
-              Hold an expense to delete it.
+              Tap an expense to edit it. Hold to delete.
             </ThemedText>
           ) : undefined
         }
@@ -122,7 +123,11 @@ export default function DailyScreen() {
         )}
         renderItem={({ item }) => (
           <View style={styles.rowWrap}>
-            <ExpenseRow item={item} onLongPress={confirmDelete} />
+            <ExpenseRow
+              item={item}
+              onPress={(expense) => setForm({ expense })}
+              onLongPress={setToDelete}
+            />
           </View>
         )}
         contentContainerStyle={{
@@ -137,7 +142,7 @@ export default function DailyScreen() {
         accessibilityLabel="Add expense"
         onPress={() => {
           setAddKey((k) => k + 1);
-          setAdding(true);
+          setForm({});
         }}
         style={({ pressed }) => [
           styles.fab,
@@ -154,9 +159,15 @@ export default function DailyScreen() {
       </Pressable>
 
       <AddExpenseModal
-        key={addKey}
-        visible={adding}
-        onClose={() => setAdding(false)}
+        key={form?.expense ? `edit-${form.expense.id}` : `add-${addKey}`}
+        visible={form !== null}
+        expense={form?.expense}
+        onClose={() => setForm(null)}
+      />
+
+      <DeleteExpenseDialog
+        expense={toDelete}
+        onClose={() => setToDelete(null)}
       />
     </ThemedView>
   );

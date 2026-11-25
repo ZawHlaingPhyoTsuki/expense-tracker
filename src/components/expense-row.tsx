@@ -8,14 +8,19 @@ import { emojiFor } from "@/lib/categories";
 import { formatTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 
-type Props = { item: Expense; onLongPress: (item: Expense) => void };
+type Props = {
+  item: Expense;
+  onPress: (item: Expense) => void;
+  onLongPress: (item: Expense) => void;
+};
 
-export function ExpenseRow({ item, onLongPress }: Props) {
+export function ExpenseRow({ item, onPress, onLongPress }: Props) {
   const theme = useTheme();
   return (
     <Pressable
+      onPress={() => onPress(item)}
       onLongPress={() => onLongPress(item)}
-      accessibilityHint="Hold to delete"
+      accessibilityHint="Tap to edit, hold to delete"
       style={({ pressed }) => [
         styles.row,
         {
